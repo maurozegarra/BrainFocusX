@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/navigation"
+    app:startDestination="@id/titleFragment">
+
+    <fragment
+        android:id="@+id/titleFragment"
+        android:name="com.maurozegarra.brainfocusx.TitleFragment"
+        android:label="TitleFragment" >
+        <action
+            android:id="@+id/action_titleFragment_to_sessionFragment"
+            app:destination="@id/sessionFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/sessionFragment"
+        android:name="com.maurozegarra.brainfocusx.SessionFragment"
+        android:label="SessionFragment" />
+</navigation>
