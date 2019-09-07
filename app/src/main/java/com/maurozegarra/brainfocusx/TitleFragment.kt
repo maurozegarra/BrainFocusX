@@ -28,7 +28,7 @@ class TitleFragment : Fragment() {
         const val HOUR = 1000L * 60L * 60L
         const val ONE_MINUTE = 1000L * 60L
         const val POMO1 = 25
-        const val POMO2 = 15
+        const val POMO2 = 55
     }
 
     lateinit var timer: CountDownTimer
@@ -51,6 +51,7 @@ class TitleFragment : Fragment() {
         // obtiene una instancia del Calendar
         var calendar = Calendar.getInstance()
         // fija el calendar a las 4 horas
+        // HOUR is used for the 12-hour clock
         calendar.set(Calendar.HOUR, 5)
         // fija el calendar a los 35 minutos
         calendar.set(Calendar.MINUTE, 15)
