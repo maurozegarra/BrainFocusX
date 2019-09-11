@@ -5,15 +5,15 @@ import android.os.CountDownTimer
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.navigation.Navigation
 import com.maurozegarra.brainfocusx.databinding.FragmentTitleBinding
 import timber.log.Timber
 import java.util.*
 
 class TitleFragment : Fragment() {
-
     // todo: add type of interval: work or rest
     data class Interval(var start: Int, var end: Int)
 
@@ -21,7 +21,7 @@ class TitleFragment : Fragment() {
         Interval(0, 25),
         Interval(25, 30),
         Interval(30, 55),
-        Interval(55, 0)
+        Interval(55, 60)
     )
 
     private var currentInterval = allIntervals[0]
@@ -43,9 +43,19 @@ class TitleFragment : Fragment() {
     ): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_title, container, false)
 
-        binding.buttonWork.setOnClickListener(
-            Navigation.createNavigateOnClickListener(R.id.action_titleFragment_to_sessionFragment)
-        )
+        val notificationManagerCompat = NotificationManagerCompat.from(requireContext())
+
+        binding.buttonWork.setOnClickListener {
+            val notification = NotificationCompat.Builder(requireContext(), CHANNEL_1_ID)
+                .setSmallIcon(R.drawable.ic_stat_reminder)
+                .setContentTitle("Title")
+                .setContentText("Message")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .build()
+
+            notificationManagerCompat.notify(1, notification)
+        }
 
         timer = object : CountDownTimer(DAY, ONE_SECOND) {
 
@@ -57,7 +67,6 @@ class TitleFragment : Fragment() {
                 if (hour == 0) {
                     hour = 12
                 }
-                //Timber.i("$hour")
 
                 val minute = now.get(Calendar.MINUTE)
                 //val minute = 0
@@ -69,7 +78,7 @@ class TitleFragment : Fragment() {
                 // Muestra el Timer
                 getCurrentStartInterval(minute)
                 var timerMinute = currentInterval.end - minute - 1
-                //Timber.i("timerMinute: $timerMinute, currentInterval: $currentInterval, minute: $minute")
+                Timber.i("timerMinute: $timerMinute, currentInterval: $currentInterval, minute: $minute")
 
                 val timerSecond: Int
 
@@ -93,16 +102,11 @@ class TitleFragment : Fragment() {
     }
 
     private fun getCurrentStartInterval(currentMinute: Int) {
-        //Timber.i("$currentMinute")
-        if (currentMinute == 55) {
-            currentInterval.start = 55
-            currentInterval.end = 60
-        }
-
         var newInterval = allIntervals[0]
 
         for (interval in allIntervals) {
             //Timber.i("${interval.start}, ${interval.end}")
+
             if (interval.start <= currentMinute && currentMinute < interval.end) {
                 //Timber.i("$interval")
                 newInterval = interval
