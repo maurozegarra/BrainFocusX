@@ -1,7 +1,6 @@
 package com.maurozegarra.brainfocusx
 
 import android.app.Application
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -9,7 +8,6 @@ import android.os.Build
 import timber.log.Timber
 
 const val CHANNEL_1_ID = "channel1"
-const val CHANNEL_2_ID = "channel2"
 
 class BrainFocusX : Application() {
 
@@ -17,28 +15,26 @@ class BrainFocusX : Application() {
         super.onCreate()
         Timber.plant(Timber.DebugTree())
 
-        createNotificationChannels()
+        createNotificationChannel()
     }
 
-    private fun createNotificationChannels() {
+    // 2.- Create a channel and set the importance
+    private fun createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel1 = NotificationChannel(
-                CHANNEL_1_ID,
-                "Channel 1",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            channel1.description = "This is Channel 1"
+            val name = getString(R.string.channel_name)
+            val descriptionText = getString(R.string.channel_description)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
 
-            val channel2 = NotificationChannel(
-                CHANNEL_2_ID,
-                "Channel 2",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            channel2.description = "This is Channel 2"
+            val channel = NotificationChannel(CHANNEL_1_ID, name, importance).apply {
+                description = descriptionText
+            }
 
-            val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel1)
-            notificationManager.createNotificationChannel(channel2)
+            // Register the channel with the system
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
         }
     }
 }

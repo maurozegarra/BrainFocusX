@@ -17,6 +17,7 @@ class TitleFragment : Fragment() {
     // todo: add type of interval: work or rest
     data class Interval(var start: Int, var end: Int)
 
+    private val notificationId: Int = 1
     private val allIntervals = listOf(
         Interval(0, 25),
         Interval(25, 30),
@@ -43,18 +44,19 @@ class TitleFragment : Fragment() {
     ): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_title, container, false)
 
-        val notificationManagerCompat = NotificationManagerCompat.from(requireContext())
-
         binding.buttonWork.setOnClickListener {
-            val notification = NotificationCompat.Builder(requireContext(), CHANNEL_1_ID)
-                .setSmallIcon(R.drawable.ic_stat_reminder)
+            // 1.- Set the notification content
+            val builder = NotificationCompat.Builder(requireContext(), CHANNEL_1_ID)
+                .setSmallIcon(R.drawable.ic_reminder)
                 .setContentTitle("Title")
                 .setContentText("Message")
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .build()
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-            notificationManagerCompat.notify(1, notification)
+            // 3.- Show the notification
+            with(NotificationManagerCompat.from(requireContext())) {
+                // notificationId is a unique int for each notification that you must define
+                notify(notificationId, builder.build())
+            }
         }
 
         timer = object : CountDownTimer(DAY, ONE_SECOND) {
