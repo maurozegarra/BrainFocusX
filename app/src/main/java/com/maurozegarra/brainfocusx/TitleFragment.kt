@@ -1,23 +1,27 @@
 package com.maurozegarra.brainfocusx
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Context.ALARM_SERVICE
+import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import com.maurozegarra.brainfocusx.databinding.FragmentTitleBinding
 import timber.log.Timber
+import java.text.DateFormat
 import java.util.*
 
 class TitleFragment : Fragment() {
     // todo: add type of interval: work or rest
+
     data class Interval(var start: Int, var end: Int)
 
-    private val notificationId: Int = 1
     private val allIntervals = listOf(
         Interval(0, 25),
         Interval(25, 30),
@@ -27,13 +31,20 @@ class TitleFragment : Fragment() {
 
     private var currentInterval = allIntervals[0]
 
+    private var isWorking = false
+
     companion object {
+        const val SHARED_PREFS = "sharedPrefs"
+        const val TARGET_TIME = "targetTime"
+        const val IS_WORKING = "isWorking"
+
         // This is the number of milliseconds in a second
         const val ONE_SECOND = 1000L
         const val DAY = 1000L * 60L * 60L * 24L
     }
 
     lateinit var timer: CountDownTimer
+    lateinit var alarmManager: AlarmManager
 
     // Contains all the views
     private lateinit var binding: FragmentTitleBinding
@@ -45,18 +56,11 @@ class TitleFragment : Fragment() {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_title, container, false)
 
         binding.buttonWork.setOnClickListener {
-            // 1.- Set the notification content
-            val builder = NotificationCompat.Builder(requireContext(), CHANNEL_1_ID)
-                .setSmallIcon(R.drawable.ic_reminder)
-                .setContentTitle("Title")
-                .setContentText("Message")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            onStartWork()
+        }
 
-            // 3.- Show the notification
-            with(NotificationManagerCompat.from(requireContext())) {
-                // notificationId is a unique int for each notification that you must define
-                notify(notificationId, builder.build())
-            }
+        binding.buttonBreak.setOnClickListener {
+            cancelAlarm()
         }
 
         timer = object : CountDownTimer(DAY, ONE_SECOND) {
@@ -80,7 +84,7 @@ class TitleFragment : Fragment() {
                 // Muestra el Timer
                 getCurrentStartInterval(minute)
                 var timerMinute = currentInterval.end - minute - 1
-                Timber.i("timerMinute: $timerMinute, currentInterval: $currentInterval, minute: $minute")
+                //Timber.i("timerMinute: $timerMinute, currentInterval: $currentInterval, minute: $minute")
 
                 val timerSecond: Int
 
@@ -100,7 +104,66 @@ class TitleFragment : Fragment() {
 
         timer.start()
 
+        loadData()
+        updateButtons()
+
         return binding.root
+    }
+
+    private fun onStartWork() {
+        // todo: create alarms
+        val timeToAlarm = Calendar.getInstance()
+
+        val hour = timeToAlarm.get(Calendar.HOUR)
+        val minute = timeToAlarm.get(Calendar.MINUTE)
+
+        getCurrentStartInterval(minute)
+
+        timeToAlarm.set(Calendar.HOUR, hour)
+        timeToAlarm.set(Calendar.MINUTE, currentInterval.end)
+        timeToAlarm.set(Calendar.SECOND, 0)
+//        Timber.i("hour: $hour, currentInterval.end: ${currentInterval.end}")
+
+        updateTimeText(timeToAlarm)
+        scheduleAlarm(timeToAlarm)
+        isWorking = true
+        updateButtons()
+    }
+
+    private fun scheduleAlarm(calendar: Calendar) {
+        alarmManager = activity?.getSystemService(ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(context, 1, intent, 0)
+
+        alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+    }
+
+    private fun cancelAlarm() {
+        alarmManager = activity?.getSystemService(ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(context, 1, intent, 0)
+
+        alarmManager.cancel(pendingIntent)
+        binding.textTarget.text = getString(R.string.no_alarm_set)
+        isWorking = false
+
+        updateButtons()
+    }
+
+    private fun updateButtons() {
+        if (isWorking) {
+            binding.buttonWork.visibility = View.INVISIBLE
+            binding.buttonBreak.visibility = View.VISIBLE
+        } else {
+            binding.buttonWork.visibility = View.VISIBLE
+            binding.buttonBreak.visibility = View.INVISIBLE
+        }
+    }
+
+    private fun updateTimeText(calendar: Calendar) {
+        var timeText = "Focus until: "
+        timeText += DateFormat.getTimeInstance(DateFormat.SHORT).format(calendar.time)
+        binding.textTarget.text = timeText
     }
 
     private fun getCurrentStartInterval(currentMinute: Int) {
@@ -108,7 +171,6 @@ class TitleFragment : Fragment() {
 
         for (interval in allIntervals) {
             //Timber.i("${interval.start}, ${interval.end}")
-
             if (interval.start <= currentMinute && currentMinute < interval.end) {
                 //Timber.i("$interval")
                 newInterval = interval
@@ -122,5 +184,27 @@ class TitleFragment : Fragment() {
             //binding.dessertButton.setImageResource(newDessert.imageId)
         }
         //Timber.i("currentInterval: $currentInterval")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        saveData()
+    }
+
+    private fun saveData() {
+        val preference = context?.getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE)
+
+        with (preference?.edit()) {
+            this?.putString(TARGET_TIME, binding.textTarget.text.toString())
+            this?.putBoolean(IS_WORKING, isWorking)
+            this?.apply()
+        }
+    }
+
+    private fun loadData() {
+        val preference = context?.getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE)
+
+        binding.textTarget.text = preference?.getString(TARGET_TIME, "")
+        isWorking = preference!!.getBoolean(IS_WORKING, false)
     }
 }

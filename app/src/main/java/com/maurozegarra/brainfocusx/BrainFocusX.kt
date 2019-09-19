@@ -18,7 +18,7 @@ class BrainFocusX : Application() {
         createNotificationChannel()
     }
 
-    // 2.- Create a channel and set the importance
+    // 1/4.- Create a notification channel and set the importance
     private fun createNotificationChannel() {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
@@ -31,7 +31,7 @@ class BrainFocusX : Application() {
                 description = descriptionText
             }
 
-            // Register the channel with the system
+            // 2/4.- Register the notification channel with the system
             val notificationManager: NotificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
